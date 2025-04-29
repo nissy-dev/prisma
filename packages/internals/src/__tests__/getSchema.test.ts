@@ -1,7 +1,7 @@
 import path from 'path'
 import stripAnsi from 'strip-ansi'
 
-import { getSchemaWithPath } from '../cli/getSchema'
+import { getSchemaRootDirectoryFromSchemaPaths, getSchemaWithPath } from '../cli/getSchema'
 import { fixturesPath } from './__utils__/fixtures'
 
 if (process.env.CI) {
@@ -206,4 +206,51 @@ it('fails with no schema in workspaces', async () => {
 
     See also https://pris.ly/d/prisma-schema-location]
   `)
+})
+
+describe('getSchemaRootDirectoryFromSchemaPaths', () => {
+  it('should return the common root directory for multiple schema paths', () => {
+    const schemaPaths = [
+      '/path/to/module-a/db/module-a.database-1.prisma',
+      '/path/to/module-a/db/module-a.database-2.prisma',
+      '/path/to/module-b/db/module-b.database-1.prisma',
+    ]
+
+    const result = getSchemaRootDirectoryFromSchemaPaths(schemaPaths)
+    expect(result).toBe('/path/to')
+  })
+
+  it('should return the parent directory when all paths are in the same directory', () => {
+    const schemaPaths = ['/path/to/db/schema1.prisma', '/path/to/db/schema2.prisma']
+
+    const result = getSchemaRootDirectoryFromSchemaPaths(schemaPaths)
+    expect(result).toBe('/path/to/db')
+  })
+
+  it('should return the directory itself when there is only one path', () => {
+    const schemaPaths = ['/path/to/schema.prisma']
+
+    const result = getSchemaRootDirectoryFromSchemaPaths(schemaPaths)
+    expect(result).toBe('/path/to')
+  })
+
+  it('should handle Windows paths', () => {
+    const schemaPaths = [
+      'C:\\path\\to\\module-a\\db\\module-a.database-1.prisma',
+      'C:\\path\\to\\module-a\\db\\module-a.database-2.prisma',
+    ]
+
+    const result = getSchemaRootDirectoryFromSchemaPaths(schemaPaths)
+    expect(result).toBe('C:\\path\\to\\module-a\\db')
+  })
+
+  it('should handle relative paths', () => {
+    const schemaPaths = [
+      './src/modules/module-a/db/module-a.database-1.prisma',
+      './src/modules/module-a/db/module-a.database-2.prisma',
+    ]
+
+    const result = getSchemaRootDirectoryFromSchemaPaths(schemaPaths)
+    expect(result).toBe('./src/modules/module-a/db')
+  })
 })

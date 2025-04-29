@@ -6,6 +6,7 @@ import type {
   SuccessfulLookupResult,
 } from '@prisma/schema-files-loader'
 import { ensureType, loadSchemaFiles } from '@prisma/schema-files-loader'
+import { glob } from 'fast-glob'
 import fs from 'fs'
 import { dim, green } from 'kleur/colors'
 import path from 'path'
@@ -121,7 +122,42 @@ async function readSchemaFromDirectory(schemaPath: string): Promise<LookupResult
   return { ok: true, schema: { schemaPath, schemaRootDir: schemaPath, schemas: files } }
 }
 
+export function getSchemaRootDirectoryFromSchemaPaths(schemaPaths: string[]): string {
+  const splitPaths = schemaPaths.map((p) => path.resolve(path.dirname(p))).map((p) => p.split(path.sep))
+  let common = splitPaths[0]
+  for (const parts of splitPaths.slice(1)) {
+    let i = 0
+    while (i < common.length && i < parts.length && common[i] === parts[i]) {
+      i++
+    }
+    common = common.slice(0, i)
+  }
+  return common.join(path.sep)
+}
+
 async function readSchemaFromFileOrDirectory(schemaPath: string): Promise<LookupResult> {
+  if (schemaPath.includes('*') || schemaPath.includes('?')) {
+    const files = await glob(schemaPath, { absolute: true })
+    if (files.length === 0) {
+      return {
+        ok: false,
+        error: { kind: 'NotFound', path: schemaPath },
+      } as const
+    }
+
+    const schemaRootDir = getSchemaRootDirectoryFromSchemaPaths(files)
+    const schemas = await loadSchemaFiles(schemaRootDir)
+
+    return {
+      ok: true,
+      schema: {
+        schemaPath,
+        schemaRootDir,
+        schemas,
+      },
+    } as const
+  }
+
   let stats: fs.Stats
   try {
     stats = await stat(schemaPath)

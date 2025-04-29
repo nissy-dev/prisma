@@ -42,7 +42,6 @@
     "esbuild": "0.25.1",
     "escape-string-regexp": "5.0.0",
     "execa": "5.1.1",
-    "fast-glob": "3.3.3",
     "find-up": "7.0.0",
     "fp-ts": "2.16.9",
     "fs-extra": "11.3.0",
@@ -91,6 +90,7 @@
     "@prisma/schema-engine-wasm": "6.7.0-34.73c36c3d4a550c55ca1ae7e8c2681b168077d39e",
     "@prisma/schema-files-loader": "workspace:*",
     "arg": "5.0.2",
+    "fast-glob": "3.3.3",
     "prompts": "2.4.2"
   },
   "peerDependencies": {
